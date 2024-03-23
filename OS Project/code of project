@@ -1,0 +1,114 @@
+import tkinter as tk
+from tkinter import messagebox
+
+class Process:
+    def __init__(self, pid, size):
+        self.pid = pid
+        self.size = size
+        self.allocated = False
+
+class MemoryBlock:
+    def __init__(self, bid, size):
+        self.bid = bid
+        self.size = size
+        self.allocated = False
+
+processes = []
+memory_blocks = []
+
+def first_fit():
+    for process in processes:
+        for block in memory_blocks:
+            if not block.allocated and block.size >= process.size:
+                block.allocated = True
+                result_text.insert(tk.END, f"Process {process.pid} allocated to memory block {block.bid} using First Fit.\n")
+                break
+
+def best_fit():
+    for process in processes:
+        best_fit_block = None
+        for block in memory_blocks:
+            if not block.allocated and block.size >= process.size:
+                if best_fit_block is None or block.size < best_fit_block.size:
+                    best_fit_block = block
+        if best_fit_block:
+            best_fit_block.allocated = True
+            result_text.insert(tk.END, f"Process {process.pid} allocated to memory block {best_fit_block.bid} using Best Fit.\n")
+
+def worst_fit():
+    for process in processes:
+        worst_fit_block = None
+        for block in memory_blocks:
+            if not block.allocated and block.size >= process.size:
+                if worst_fit_block is None or block.size > worst_fit_block.size:
+                    worst_fit_block = block
+        if worst_fit_block:
+            worst_fit_block.allocated = True
+            result_text.insert(tk.END, f"Process {process.pid} allocated to memory block {worst_fit_block.bid} using Worst Fit.\n")
+
+def on_allocate():
+    try:
+        processes.clear()
+        memory_blocks.clear()
+
+        process_sizes = [int(x) for x in process_size_entry.get().split()]
+        memory_sizes = [int(x) for x in memory_size_entry.get().split()]
+
+        if len(process_sizes) == 0 or len(memory_sizes) == 0:
+            messagebox.showerror("Error", "Please enter at least one size for process and memory block.")
+            return
+
+        for i, size in enumerate(process_sizes):
+            processes.append(Process(i + 1, size))
+
+        for i, size in enumerate(memory_sizes):
+            memory_blocks.append(MemoryBlock(i + 1, size))
+
+        choice = allocation_strategy.get()
+
+        result_text.delete(1.0, tk.END)  # Clear previous results
+        if choice == 1:
+            first_fit()
+        elif choice == 2:
+            best_fit()
+        elif choice == 3:
+            worst_fit()
+        else:
+            messagebox.showerror("Error", "Invalid choice.")
+    except ValueError:
+        messagebox.showerror("Error", "Please enter valid numeric values.")
+
+# GUI setup
+window = tk.Tk()
+window.title("Memory Allocation Strategies")
+
+# Input Frame
+input_frame = tk.Frame(window)
+input_frame.pack(pady=10)
+
+tk.Label(input_frame, text="Enter Process Sizes (space-separated):").grid(row=0, column=0, padx=5, pady=5)
+process_size_entry = tk.Entry(input_frame)
+process_size_entry.grid(row=0, column=1, padx=5, pady=5)
+
+tk.Label(input_frame, text="Enter Memory Block Sizes (space-separated):").grid(row=1, column=0, padx=5, pady=5)
+memory_size_entry = tk.Entry(input_frame)
+memory_size_entry.grid(row=1, column=1, padx=5, pady=5)
+
+allocation_strategy = tk.IntVar()
+tk.Radiobutton(input_frame, text="First Fit", variable=allocation_strategy, value=1).grid(row=2, column=0, padx=5, pady=5, sticky="w")
+tk.Radiobutton(input_frame, text="Best Fit", variable=allocation_strategy, value=2).grid(row=3, column=0, padx=5, pady=5, sticky="w")
+tk.Radiobutton(input_frame, text="Worst Fit", variable=allocation_strategy, value=3).grid(row=4, column=0, padx=5, pady=5, sticky="w")
+
+# Allocate Button
+allocate_button = tk.Button(window, text="Allocate", command=on_allocate)
+allocate_button.pack(pady=5)
+
+# Result Frame
+result_frame = tk.Frame(window)
+result_frame.pack()
+
+tk.Label(result_frame, text="Result:").pack(pady=5)
+result_text = tk.Text(result_frame, width=50, height=10)
+result_text.pack()
+
+window.mainloop()
